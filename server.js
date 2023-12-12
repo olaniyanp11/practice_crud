@@ -109,7 +109,38 @@ app.get("/createuser", (req, res) => {
   res.render("createuser", { message });
 });
 
-app.post("/update/:id", (req, res) => {});
+app.post("/update", upload, async (req, res) => {
+  try {
+    const userId = req.body.id;
+    const { name, email, gender } = req.body;
+    const profilePicture = req.file ? req.file.filename : null;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    // Update user fields
+    user.name = name;
+    user.email = email;
+    user.gender = gender;
+
+    // Update profile picture if a new one is uploaded
+    if (profilePicture) {
+      // Delete the old profile picture if it exists
+      if (user.profilePicture) {
+        fs.unlinkSync(`./images/${user.profilePicture}`);
+      }
+      user.profilePicture = profilePicture;
+    }
+
+    // Save the updated user
+    await user.save();
+
+    res.redirect("/"); // Redirect to the home page or another appropriate route
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 app.get("/update/:id", async (req, res) => {
   const id = req.params.id;
   let message = "";
