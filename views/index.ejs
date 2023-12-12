@@ -1,0 +1,37 @@
+<%- include('header') %> <% if (message !== "") { %>
+<div class="alert alert-<%= message.type %> alert-dismissible">
+  <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+  <strong><%= message.type %></strong> <%= message.message %>
+</div>
+<% } %>
+<table class="table table-striped">
+  <tr id="heading">
+    <th>profile picture</th>
+    <th>name</th>
+    <th>email</th>
+    <th>gender</th>
+    <th>
+      <a href="/createuser" class="btn btn-secondary">create user</a>
+    </th>
+    <th></th>
+  </tr>
+  <% for( let i = 0; i < friendlist.length; i++ ) { %>
+  <tr>
+    <td><img src="<%=friendlist[i].profilePicture%>" alt="" width="50" /></td>
+    <td><%=friendlist[i].name%></td>
+    <td><%=friendlist[i].email%></td>
+    <td><%=friendlist[i].gender%></td>
+    <td>
+      <a href="/edit/<%=friendlist[i]._id%>" class="btn btn-success"
+        >edit user</a
+      >
+    </td>
+    <td>
+      <a href="/delete/<%=friendlist[i]._id%>" class="btn btn-danger"
+        >delete user</a
+      >
+    </td>
+  </tr>
+  <% } %>
+</table>
+<%- include('footer')%>
