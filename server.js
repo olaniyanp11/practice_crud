@@ -1,4 +1,3 @@
-// ok
 const express = require("express");
 const mongoose = require("mongoose");
 const multer = require("multer");
@@ -6,21 +5,17 @@ const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const User = require("./models/users");
 const fs = require("fs");
+
 dotenv.config();
+
 mongoose
   .connect(process.env.DB)
-  .then(() => {
-    console.log("Connected to the database");
-  })
-  .catch((error) => {
-    console.error("Error connecting to the database:", error);
-  });
+  .then(() => console.log("Connected to the database"))
+  .catch((error) => console.error("Error connecting to the database:", error));
 
-// configure the app
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
-// use part
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -28,38 +23,26 @@ app.use(express.static("assets"));
 app.use(express.static("images"));
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "./images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.fieldname + "_" + Date.now() + "_" + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, "./images"),
+  filename: (req, file, cb) =>
+    cb(null, `${file.fieldname}_${Date.now()}_${file.originalname}`),
 });
 
 const upload = multer({ storage: storage }).single("image");
 
-// define route
 app.get("/", async (req, res) => {
-  let message = {
-    message: "",
-    type: "",
-  };
   try {
     const sage = req.query.message;
     const type = req.query.type;
+    let message = { message: "", type: "" };
+
     if (sage) {
       console.log(sage);
-      message = {
-        message: sage,
-        type: type,
-      };
+      message = { message: sage, type: type };
     }
-  } catch (error) {
-    console.log(error);
-  }
-  try {
-    let friendlist = await User.find({});
-    res.render("index", { friendlist: friendlist, message });
+
+    const friendlist = await User.find({});
+    res.render("index", { friendlist, message });
   } catch (err) {
     console.error(err);
     res.status(500).send("Internal Server Error");
@@ -68,77 +51,66 @@ app.get("/", async (req, res) => {
 
 app.post("/createuser", upload, async (req, res) => {
   try {
-    let name = req.body.name;
-    let email = req.body.email;
-    let password = req.body.password;
-    let profilePicture = req.file.filename;
-    let gender = req.body.gender;
-    try {
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        console.log("Email already in use");
-        if (profilePicture !== "") {
-          fs.unlinkSync(`./images/` + `${profilePicture}`);
-        }
-        return res.redirect("/createuser?error=emailInUse");
+    const { name, email, password, gender } = req.body;
+    const profilePicture = req.file.filename;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      console.log("Email already in use");
+      if (profilePicture !== "") {
+        fs.unlinkSync(`./images/${profilePicture}`);
       }
-    } catch (error) {
-      console.log(error);
+      return res.redirect("/createuser?error=emailInUse");
     }
-    const newuser = new User({
-      name,
-      email,
-      password,
-      profilePicture,
-      gender,
-    });
-    newuser.save();
-    console.log("created a new user");
+
+    const newuser = new User({ name, email, password, profilePicture, gender });
+    await newuser.save();
+    console.log("Created a new user");
   } catch (err) {
-    console.log(err);
+    console.error(err);
   }
-  res.redirect(`/?message=created new user&type=success`);
+  res.redirect("/?message=createdNewUser&type=success");
 });
 
 app.get("/delete/:id", async (req, res) => {
   const id = req.params.id;
+
   try {
-    let user = await User.findOne({ _id: id });
+    const user = await User.findOne({ _id: id });
     await User.deleteOne({ _id: id });
+
     try {
-      fs.unlinkSync("./images/" + `${user.profilePicture}`);
-      console.log("Delete File successfully.");
-        res.redirect(`/?message=deleted user&type=success`);
+      fs.unlinkSync(`./images/${user.profilePicture}`);
+      console.log("Delete file successfully.");
+      res.redirect("/?message=deletedUser&type=success");
     } catch (error) {
-      console.log("error deleting file" + error.message);
+      console.log("Error deleting file:", error.message);
     }
   } catch (error) {
-    console.log("error finding user");
+    console.log("Error finding user:", error.message);
   }
 });
+
 app.get("/createuser", (req, res) => {
-  let message = {
-    message: "",
-    type: "",
-  };
+  let message = { message: "", type: "" };
+
   try {
     const error = req.query.error;
     if (error) {
       console.log(error);
-      message = {
-        message: error,
-        type: "danger",
-      };
+      message = { message: error, type: "danger" };
     }
   } catch (error) {
-    return res.redirect("/createuser?error=error");
+    res.redirect("/createuser?error=error");
   }
+
   res.render("createuser", { message });
 });
+
 app.get("/friend", (req, res) => {
-  const friendlist = U;
   res.render("friend", { friendlist: [] });
 });
+
 app.listen(PORT, () => {
-  console.log(`app listening on https://localhost:${PORT}`);
+  console.log(`App listening on https://localhost:${PORT}`);
 });
