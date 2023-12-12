@@ -5,6 +5,8 @@ const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const User = require("./models/users");
 const fs = require("fs");
+const path= require('path')
+const { log } = require("console");
 
 dotenv.config();
 
@@ -19,9 +21,9 @@ const PORT = process.env.PORT || 3000;
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("assets"));
+const assetsPath = path.join(__dirname, "assets");
 app.use(express.static("images"));
-
+app.use(express.static(assetsPath));
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "./images"),
   filename: (req, file, cb) =>
@@ -107,10 +109,19 @@ app.get("/createuser", (req, res) => {
   res.render("createuser", { message });
 });
 
-app.get("/friend", (req, res) => {
-  res.render("friend", { friendlist: [] });
+app.post("/update/:id", (req, res) => {});
+app.get("/update/:id", async (req, res) => {
+  const id = req.params.id;
+  let message = "";
+  try {
+    let curuser = await User.findOne({ _id: id });
+    console.log(curuser.email);
+    res.render("update", { message, curuser });
+  } catch (error) {
+    console.log(error);
+    res.status(401).json({error})
+  }
 });
-
 app.listen(PORT, () => {
   console.log(`App listening on https://localhost:${PORT}`);
 });
